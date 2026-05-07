@@ -1,0 +1,267 @@
+{
+  "version": "1.0.0",
+  "effectiveDate": "2026-05-01T00:00:00.000Z",
+  "currency": "USD",
+  "vendors": [
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "officialPricingUrl": "https://cursor.com/pricing",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "hobby",
+          "label": "Hobby",
+          "model": "flat",
+          "monthlyUsd": 0,
+          "tier": 0
+        },
+        {
+          "id": "pro",
+          "label": "Pro",
+          "model": "per_seat",
+          "monthlyUsdPerSeat": 20,
+          "tier": 1
+        },
+        {
+          "id": "business",
+          "label": "Business",
+          "model": "per_seat",
+          "monthlyUsdPerSeat": 40,
+          "tier": 2
+        },
+        {
+          "id": "enterprise",
+          "label": "Enterprise",
+          "model": "enterprise_bench",
+          "benchPerSeatUsd": 65,
+          "minBillSeats": 50,
+          "tier": 3
+        }
+      ]
+    },
+    {
+      "id": "github_copilot",
+      "name": "GitHub Copilot",
+      "officialPricingUrl": "https://github.com/features/copilot/plans",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "individual",
+          "label": "Individual",
+          "model": "flat",
+          "monthlyUsd": 10,
+          "tier": 1
+        },
+        {
+          "id": "business",
+          "label": "Business",
+          "model": "per_seat",
+          "monthlyUsdPerSeat": 19,
+          "tier": 2
+        },
+        {
+          "id": "enterprise",
+          "label": "Enterprise",
+          "model": "enterprise_bench",
+          "benchPerSeatUsd": 39,
+          "minBillSeats": 50,
+          "tier": 3
+        }
+      ]
+    },
+    {
+      "id": "claude",
+      "name": "Claude (Anthropic consumer)",
+      "officialPricingUrl": "https://www.anthropic.com/pricing",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "free",
+          "label": "Free",
+          "model": "flat",
+          "monthlyUsd": 0,
+          "tier": 0
+        },
+        {
+          "id": "pro",
+          "label": "Pro",
+          "model": "flat",
+          "monthlyUsd": 20,
+          "tier": 1
+        },
+        {
+          "id": "max",
+          "label": "Max",
+          "model": "flat",
+          "monthlyUsd": 100,
+          "tier": 2
+        },
+        {
+          "id": "team",
+          "label": "Team",
+          "model": "per_seat",
+          "monthlyUsdPerSeat": 30,
+          "tier": 2
+        },
+        {
+          "id": "enterprise",
+          "label": "Enterprise",
+          "model": "enterprise_bench",
+          "benchPerSeatUsd": 45,
+          "minBillSeats": 25,
+          "tier": 3
+        },
+        {
+          "id": "api",
+          "label": "API (usage)",
+          "model": "usage",
+          "tier": 4,
+          "alternateVendorHint": "anthropic_api"
+        }
+      ]
+    },
+    {
+      "id": "chatgpt",
+      "name": "ChatGPT",
+      "officialPricingUrl": "https://openai.com/chatgpt/pricing/",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "plus",
+          "label": "Plus",
+          "model": "flat",
+          "monthlyUsd": 20,
+          "tier": 1
+        },
+        {
+          "id": "team",
+          "label": "Team",
+          "model": "per_seat",
+          "monthlyUsdPerSeat": 25,
+          "tier": 2
+        },
+        {
+          "id": "enterprise",
+          "label": "Enterprise",
+          "model": "enterprise_bench",
+          "benchPerSeatUsd": 60,
+          "minBillSeats": 150,
+          "tier": 3
+        },
+        {
+          "id": "api",
+          "label": "API",
+          "model": "usage",
+          "tier": 4,
+          "alternateVendorHint": "openai_api"
+        }
+      ]
+    },
+    {
+      "id": "anthropic_api",
+      "name": "Anthropic API",
+      "officialPricingUrl": "https://www.anthropic.com/pricing#api",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "pay_as_you_go",
+          "label": "Pay-as-you-go",
+          "model": "usage",
+          "tier": 1
+        },
+        {
+          "id": "committed",
+          "label": "Committed / volume",
+          "model": "usage",
+          "tier": 2
+        }
+      ]
+    },
+    {
+      "id": "openai_api",
+      "name": "OpenAI API",
+      "officialPricingUrl": "https://openai.com/pricing",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "pay_as_you_go",
+          "label": "Pay-as-you-go",
+          "model": "usage",
+          "tier": 1
+        },
+        {
+          "id": "committed",
+          "label": "Committed spend",
+          "model": "usage",
+          "tier": 2
+        }
+      ]
+    },
+    {
+      "id": "gemini",
+      "name": "Google Gemini",
+      "officialPricingUrl": "https://ai.google.dev/pricing",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "pro",
+          "label": "Google AI Pro",
+          "model": "flat",
+          "monthlyUsd": 19.99,
+          "tier": 1
+        },
+        {
+          "id": "ultra",
+          "label": "Google AI Ultra",
+          "model": "flat",
+          "monthlyUsd": 249.99,
+          "tier": 3
+        },
+        {
+          "id": "api",
+          "label": "Gemini API",
+          "model": "usage",
+          "tier": 2
+        }
+      ]
+    },
+    {
+      "id": "windsurf",
+      "name": "Windsurf",
+      "officialPricingUrl": "https://windsurf.com/pricing",
+      "verificationDate": "2026-05-01",
+      "plans": [
+        {
+          "id": "free",
+          "label": "Free",
+          "model": "flat",
+          "monthlyUsd": 0,
+          "tier": 0
+        },
+        {
+          "id": "pro",
+          "label": "Pro",
+          "model": "flat",
+          "monthlyUsd": 15,
+          "tier": 1
+        },
+        {
+          "id": "teams",
+          "label": "Teams",
+          "model": "per_seat",
+          "monthlyUsdPerSeat": 30,
+          "tier": 2
+        },
+        {
+          "id": "enterprise",
+          "label": "Enterprise",
+          "model": "enterprise_bench",
+          "benchPerSeatUsd": 45,
+          "minBillSeats": 25,
+          "tier": 3
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserLead {
+  id             String   @id @default(cuid())
+  email          String
+  company        String?
+  role           String?
+  teamSize       Int?
+  auditId        String?
+  audit          Audit?   @relation(fields: [auditId], references: [id])
+  referralSource String?
+  utm            Json?
+  honeypotFilled Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([auditId])
+  @@index([createdAt])
+}
+
+model Audit {
+  id                   String   @id @default(cuid())
+  teamSize             Int
+  companyStage         String
+  useCase              String
+  totalMonthlySpend    Decimal  @db.Decimal(14, 2)
+  totalMonthlySavings  Decimal  @db.Decimal(14, 2)
+  totalAnnualSavings   Decimal  @db.Decimal(14, 2)
+  optimizationScore    Int
+  efficiencyScore      Int
+  rawInput             Json
+  rawOutput            Json
+  aiSummary            String?
+  sessionId            String?
+  ipHash               String?
+  userAgent            String?
+  referrer             String?
+  createdAt            DateTime @default(now())
+
+  tools        AuditTool[]
+  leads        UserLead[]
+  publicReport PublicReport?
+}
+
+model AuditTool {
+  id                String  @id @default(cuid())
+  auditId           String
+  audit             Audit   @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  vendorId          String
+  planId            String
+  seats             Int
+  monthlySpend      Decimal @db.Decimal(14, 2)
+  recommendedPlanId String?
+  monthlySavings    Decimal @db.Decimal(14, 2)
+  annualSavings     Decimal @db.Decimal(14, 2)
+  reasoning         String
+
+  @@index([auditId])
+}
+
+model PublicReport {
+  id                 String   @id @default(cuid())
+  slug               String   @unique
+  auditId            String   @unique
+  audit              Audit    @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  sanitizedPayload   Json
+  totalMonthlySavings Decimal @db.Decimal(14, 2)
+  totalAnnualSavings  Decimal @db.Decimal(14, 2)
+  optimizationScore   Int
+  createdAt          DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model PricingSource {
+  id                 String   @id @default(cuid())
+  vendorName         String
+  plan               String
+  officialPricingUrl String
+  verificationDate   DateTime
+  notes              String?
+  datasetVersion     String
+  createdAt          DateTime @default(now())
+
+  @@index([datasetVersion])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  eventType  String
+  payload    Json?
+  sessionId  String?
+  auditId    String?
+  path       String?
+  createdAt  DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([sessionId])
+}
