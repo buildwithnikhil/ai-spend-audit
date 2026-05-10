@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PrintSaveButton } from "@/components/print-save-button";
-import { prisma } from "@/lib/db";
+import { getSupabaseServerClient } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,12 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await props.params;
-  const report = await prisma.publicReport.findUnique({ where: { slug } });
+  const supabase = getSupabaseServerClient();
+  const { data: report } = await supabase
+    .from("PublicReport")
+    .select("slug,totalMonthlySavings")
+    .eq("slug", slug)
+    .maybeSingle();
   if (!report) {
     return { title: "Report not found · AI Spend Audit" };
   }
@@ -46,7 +51,12 @@ export async function generateMetadata(props: { params: Promise<Params> }): Prom
 
 export default async function PublicReportPage(props: { params: Promise<Params> }) {
   const { slug } = await props.params;
-  const report = await prisma.publicReport.findUnique({ where: { slug } });
+  const supabase = getSupabaseServerClient();
+  const { data: report } = await supabase
+    .from("PublicReport")
+    .select("sanitizedPayload")
+    .eq("slug", slug)
+    .maybeSingle();
   if (!report) notFound();
 
   const payload = report.sanitizedPayload as {

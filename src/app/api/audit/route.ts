@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
-import type { Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { auditFromInput } from "@/lib/audit-engine";
 import { toSanitizedPublicPayload } from "@/lib/audit/public-payload";
-import { prisma } from "@/lib/db";
+import { getSupabaseServerClient } from "@/lib/supabase";
 import { allowRequest } from "@/lib/rate-limit";
 import { auditSubmissionSchema } from "@/lib/validations/audit";
 
@@ -48,10 +47,12 @@ export async function POST(req: Request) {
   const slug = nanoid(12);
   const sanitized = toSanitizedPublicPayload(result);
   const origin = appOrigin(req);
+  const supabase = getSupabaseServerClient();
 
   try {
-    const audit = await prisma.audit.create({
-      data: {
+    const { data: audit, error: auditError } = await supabase
+      .from("Audit")
+      .insert({
         teamSize: parsed.data.teamSize,
         companyStage: parsed.data.companyStage,
         useCase: parsed.data.useCase,
@@ -60,45 +61,49 @@ export async function POST(req: Request) {
         totalAnnualSavings: result.totalAnnualSavings,
         optimizationScore: result.optimizationScore,
         efficiencyScore: result.efficiencyScore,
-        rawInput: JSON.parse(JSON.stringify(parsed.data)) as Prisma.InputJsonValue,
-        rawOutput: JSON.parse(JSON.stringify(result)) as Prisma.InputJsonValue,
+        rawInput: parsed.data,
+        rawOutput: result,
         sessionId: parsed.data.sessionId,
         ipHash: ipKey,
         userAgent: req.headers.get("user-agent"),
         referrer: req.headers.get("referer"),
-        tools: {
-          create: result.tools.map((t) => {
-            const row = parsed.data.tools.find((x) => x.vendorId === t.vendorId);
-            return {
-              vendorId: t.vendorId,
-              planId: t.currentPlanId,
-              seats: row?.seats ?? 1,
-              monthlySpend: t.currentMonthlySpend,
-              recommendedPlanId: t.recommendedPlanId,
-              monthlySavings: t.monthlySavings,
-              annualSavings: t.annualSavings,
-              reasoning: t.reasoning,
-            };
-          }),
-        },
-        publicReport: {
-          create: {
-            slug,
-            sanitizedPayload: JSON.parse(JSON.stringify(sanitized)) as Prisma.InputJsonValue,
-            totalMonthlySavings: result.totalMonthlySavings,
-            totalAnnualSavings: result.totalAnnualSavings,
-            optimizationScore: result.optimizationScore,
-          },
-        },
-      },
-      include: { publicReport: true },
-    });
+      })
+      .select("id")
+      .single();
+    if (auditError || !audit) throw auditError ?? new Error("audit_insert_failed");
 
-    const shareUrl = `${origin.replace(/\/$/, "")}/r/${audit.publicReport!.slug}`;
+    const toolRows = result.tools.map((t) => {
+      const row = parsed.data.tools.find((x) => x.vendorId === t.vendorId);
+      return {
+        auditId: audit.id,
+        vendorId: t.vendorId,
+        planId: t.currentPlanId,
+        seats: row?.seats ?? 1,
+        monthlySpend: t.currentMonthlySpend,
+        recommendedPlanId: t.recommendedPlanId,
+        monthlySavings: t.monthlySavings,
+        annualSavings: t.annualSavings,
+        reasoning: t.reasoning,
+      };
+    });
+    const { error: toolError } = await supabase.from("AuditTool").insert(toolRows);
+    if (toolError) throw toolError;
+
+    const { error: reportError } = await supabase.from("PublicReport").insert({
+      slug,
+      auditId: audit.id,
+      sanitizedPayload: sanitized,
+      totalMonthlySavings: result.totalMonthlySavings,
+      totalAnnualSavings: result.totalAnnualSavings,
+      optimizationScore: result.optimizationScore,
+    });
+    if (reportError) throw reportError;
+
+    const shareUrl = `${origin.replace(/\/$/, "")}/r/${slug}`;
 
     return NextResponse.json({
       auditId: audit.id,
-      slug: audit.publicReport!.slug,
+      slug,
       shareUrl,
       result,
     });

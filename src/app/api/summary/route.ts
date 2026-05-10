@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { generateExecutiveSummary } from "@/lib/ai/summary";
 import type { AuditEngineResult } from "@/lib/audit-engine";
-import { prisma } from "@/lib/db";
+import { getSupabaseServerClient } from "@/lib/supabase";
 import { allowRequest } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -17,6 +17,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const supabase = getSupabaseServerClient();
   const forwarded = req.headers.get("x-forwarded-for") ?? "anon";
   const ipKey = createHash("sha256").update(forwarded).digest("hex").slice(0, 24);
   const allowed = await allowRequest("summary", ipKey, 60);
@@ -39,10 +40,7 @@ export async function POST(req: Request) {
 
   if (parsed.data.auditId) {
     try {
-      await prisma.audit.update({
-        where: { id: parsed.data.auditId },
-        data: { aiSummary: summary },
-      });
+      await supabase.from("Audit").update({ aiSummary: summary }).eq("id", parsed.data.auditId);
     } catch {
       /* ignore persistence failures */
     }

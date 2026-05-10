@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { prisma } from "@/lib/db";
+import { getSupabaseServerClient } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 export const alt = "AI Spend Audit share preview";
@@ -8,7 +8,12 @@ export const contentType = "image/png";
 
 export default async function OgImage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
-  const report = await prisma.publicReport.findUnique({ where: { slug } });
+  const supabase = getSupabaseServerClient();
+  const { data: report } = await supabase
+    .from("PublicReport")
+    .select("totalMonthlySavings")
+    .eq("slug", slug)
+    .maybeSingle();
   const monthly = report ? Number(report.totalMonthlySavings) : 0;
 
   return new ImageResponse(

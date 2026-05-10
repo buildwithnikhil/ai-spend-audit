@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { prisma } from "@/lib/db";
+import { getSupabaseServerClient } from "@/lib/supabase";
 import { sendAuditLeadEmail } from "@/lib/email/resend";
 import { allowRequest } from "@/lib/rate-limit";
 import { leadSubmissionSchema } from "@/lib/validations/audit";
@@ -34,19 +34,30 @@ export async function POST(req: Request) {
   }
 
   const origin = appOrigin(req);
+  const supabase = getSupabaseServerClient();
 
   try {
-    const audit = await prisma.audit.findUnique({
-      where: { id: parsed.data.auditId },
-      include: { publicReport: true, tools: true },
-    });
+    const { data: audit } = await supabase
+      .from("Audit")
+      .select("id,totalMonthlySavings,totalAnnualSavings")
+      .eq("id", parsed.data.auditId)
+      .maybeSingle();
+    const { data: publicReport } = await supabase
+      .from("PublicReport")
+      .select("slug")
+      .eq("auditId", parsed.data.auditId)
+      .maybeSingle();
+    const { data: tools } = await supabase
+      .from("AuditTool")
+      .select("vendorId,monthlySavings")
+      .eq("auditId", parsed.data.auditId)
+      .limit(3);
 
-    const shareUrl = audit?.publicReport?.slug
-      ? `${origin.replace(/\/$/, "")}/r/${audit.publicReport.slug}`
+    const resolvedShareUrl = publicReport?.slug
+      ? `${origin.replace(/\/$/, "")}/r/${publicReport.slug}`
       : `${origin.replace(/\/$/, "")}/audit/results`;
 
-    await prisma.userLead.create({
-      data: {
+    const { error: leadError } = await supabase.from("UserLead").insert({
         email: parsed.data.email,
         company: parsed.data.company,
         role: parsed.data.role,
@@ -55,25 +66,25 @@ export async function POST(req: Request) {
         referralSource: parsed.data.referralSource,
         utm: parsed.data.utm ?? undefined,
         honeypotFilled: false,
-      },
     });
+    if (leadError) throw leadError;
 
     const monthly =
       audit?.totalMonthlySavings != null ? Number(audit.totalMonthlySavings) : 0;
     const annual = audit?.totalAnnualSavings != null ? Number(audit.totalAnnualSavings) : 0;
     const highlights =
-      audit?.tools.slice(0, 3).map((t) => `${t.vendorId}: save ~$${Number(t.monthlySavings)}/mo`) ??
+      tools?.map((t) => `${t.vendorId}: save ~$${Number(t.monthlySavings)}/mo`) ??
       [];
 
     await sendAuditLeadEmail({
       to: parsed.data.email,
-      shareUrl,
+      shareUrl: resolvedShareUrl,
       monthlySavings: monthly,
       annualSavings: annual,
       highlights: highlights.length ? highlights : ["Review recommendations inside your shareable report."],
     });
 
-    return NextResponse.json({ ok: true, shareUrl });
+    return NextResponse.json({ ok: true, shareUrl: resolvedShareUrl });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "lead_failed" }, { status: 500 });

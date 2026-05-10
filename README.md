@@ -10,22 +10,21 @@ Screenshots: add PNGs under `docs/screenshots/` (hero, wizard, results, public s
 - Multi-step audit wizard: per-tool plan + spend + seats, team context, autosave (`localStorage` + URL params).
 - Deterministic audit engine (pricing JSON separated from rules); Vitest coverage for savings math & edge cases.
 - Results hero with optimization + efficiency scores, per-tool cards, dynamic Credex CTAs (>$500/mo vs <$100/mo honesty path).
-- Background persistence (`POST /api/audit`) → Prisma models → unique `/r/[slug]` public page with OG image route.
+- Background persistence (`POST /api/audit`) → Supabase Postgres tables → unique `/r/[slug]` public page with OG image route.
 - Email capture + honeypot + optional Upstash Redis sliding-window limits.
 - AI summary (`POST /api/summary`) prefers **Google Gemini** (Google AI Studio free tier), then Claude Haiku, then OpenAI `gpt-4o-mini`, then a deterministic template.
 - SEO: metadata, canonical, OG/Twitter, JSON-LD, `robots.txt`, `sitemap.xml`.
 
 ## Tech stack
 
-Next.js 16 App Router · TypeScript · Tailwind v4 · shadcn/ui (Base UI) · Prisma 6 · PostgreSQL · Zod · React Hook Form · Framer Motion · Zustand-free stores (local/session storage + hooks) · PostHog · Resend · Upstash Ratelimit · Vitest.
+Next.js 16 App Router · TypeScript · Tailwind v4 · shadcn/ui (Base UI) · Supabase · PostgreSQL · Zod · React Hook Form · Framer Motion · local/session storage + hooks · PostHog · Resend · Upstash Ratelimit · Vitest.
 
 ## Getting started
 
 ```bash
-cp .env.example .env
-# Set DATABASE_URL to your Postgres instance
+cp .env.example .env   # PowerShell: copy .env.example .env
 npm install
-npx prisma db push   # or migrate when you add migrations
+# run supabase/schema.sql once in Supabase SQL Editor
 npm run dev
 ```
 
@@ -35,7 +34,8 @@ Visit `http://localhost:3000`.
 
 See [.env.example](.env.example). Minimum for full flows:
 
-- `DATABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_APP_URL`
 - `RESEND_API_KEY` + verified `RESEND_FROM` domain for outbound mail
 
@@ -58,9 +58,9 @@ Optional:
 
 ## Deployment (Vercel)
 
-1. Create Postgres (Neon, Supabase, RDS) → copy connection string to `DATABASE_URL`.
+1. Create a Supabase project and run `supabase/schema.sql` in Supabase SQL Editor.
 2. Set env vars in Vercel project settings (`NEXT_PUBLIC_APP_URL` must match prod domain).
-3. Run `npx prisma db push` once against prod DB (or adopt migrations for stricter control).
+3. Add `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Vercel.
 4. Deploy; confirm `/api/audit` writes succeed and `/r/[slug]` resolves.
 
 ## Architecture overview
@@ -86,7 +86,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for diagrams, scaling notes (10k audits/d
 ## Trade-offs shipped deliberately
 
 - **Rule-based savings:** Transparent & investor-safe vs black-box ML spend forecasting.
-- **Prisma JSON columns:** Fast iteration for audit payloads vs normalized recommendation tables.
+- **JSON payload columns:** Fast iteration for audit payloads vs normalized recommendation tables.
 - **Optional Redis limits:** Dev ergonomics; prod should configure Upstash for horizontal fairness.
 - **Client-first audit:** Instant UX with tamper-aware server recompute on persist.
 
